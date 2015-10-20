@@ -1,0 +1,64 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+    xmlns:beans="http://www.springframework.org/schema/beans" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+    http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security-4.0.xsd">
+
+    <http auto-config="true" >
+        <!-- 認可の設定 --> 
+        <intercept-url pattern="/top*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_USER')" />
+        <intercept-url pattern="/admin*" access="hasRole('ROLE_ADMIN')" />
+        <intercept-url pattern="/user*" access="hasRole('ROLE_USER')" />
+        
+        <!-- 権限なし時の遷移先 -->
+        <access-denied-handler error-page="/403" />
+        
+        <!-- 認証のログイン処理 -->
+        <form-login 
+            login-page="/" 
+            default-target-url="/top" 
+            authentication-failure-url="/error" 
+            login-processing-url="/j_spring_security_check"/>
+        
+        <!-- 認証のログアウト処理 -->
+        <logout
+            logout-url="/logout"
+            logout-success-url="/"
+            invalidate-session="true"/>
+        <!-- anonymousユーザのROLE -->
+        <anonymous granted-authority="ROLE_ANONYMOUS" />
+    </http>
+
+	<beans:bean id="dataSource"
+	    class="org.springframework.jdbc.datasource.DriverManagerDataSource" >
+	    <beans:property name="driverClassName" value="org.gjt.mm.mysql.Driver" /> 
+	    <beans:property name="url" value="jdbc:mysql://127.0.0.1:3306/test_db" /> 
+	    <beans:property name="username" value="root" />
+	    <beans:property name="password" value="root" />
+	</beans:bean>
+
+   <authentication-manager alias="authenticationManager">
+     <authentication-provider>
+      <!-- SQLでユーザ情報取得 -->
+      <jdbc-user-service
+        data-source-ref="dataSource"
+        users-by-username-query="
+            select 
+                name as username, password as password, true as enabled 
+            from 
+                users 
+            where 
+                name=?"
+        authorities-by-username-query="
+            select 
+                name as username, authority as authority 
+            from 
+                users 
+            where 
+                name=?"/>
+     </authentication-provider>
+   </authentication-manager>
+
+</beans:beans>
